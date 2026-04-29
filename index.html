@@ -1931,13 +1931,13 @@
       <div class="lock-error" id="lock-error"></div>
       <form id="lock-form-setup">
         <div class="form-field">
-          <label for="setup-password">Choose password (8+ characters)</label>
-          <input type="password" id="setup-password" autocomplete="new-password" minlength="8" required autofocus />
+          <label for="setup-password">Choose password</label>
+          <input type="password" id="setup-password" autocomplete="new-password" minlength="4" required autofocus />
           <div class="password-strength"><div class="bar" id="strength-bar"></div></div>
         </div>
         <div class="form-field">
           <label for="setup-confirm">Confirm password</label>
-          <input type="password" id="setup-confirm" autocomplete="new-password" minlength="8" required />
+          <input type="password" id="setup-confirm" autocomplete="new-password" minlength="4" required />
         </div>
         <div class="lock-actions">
           <button type="submit" class="btn accent" id="btn-setup">Save password & continue</button>
@@ -1949,10 +1949,10 @@
     const strengthBar = document.getElementById('strength-bar');
     passInput.addEventListener('input', () => {
       const v = passInput.value;
-      let pct = Math.min(100, v.length * 8);
+      let pct = Math.min(100, v.length * 14);
       let color = 'var(--bad)';
-      if (v.length >= 8) color = 'var(--warn)';
-      if (v.length >= 12 && /[A-Z]/.test(v) && /[0-9]/.test(v)) color = 'var(--good)';
+      if (v.length >= 4) color = 'var(--warn)';
+      if (v.length >= 8 || (v.length >= 6 && /[A-Z]/.test(v) && /[0-9]/.test(v))) color = 'var(--good)';
       strengthBar.style.width = pct + '%';
       strengthBar.style.background = color;
     });
@@ -2006,8 +2006,8 @@
     const password = document.getElementById('setup-password').value;
     const confirm = document.getElementById('setup-confirm').value;
     
-    if (password.length < 8) {
-      setLockError('Password must be at least 8 characters.');
+    if (password.length < 4) {
+      setLockError('Password must be at least 4 characters.');
       return;
     }
     if (password !== confirm) {
@@ -2136,9 +2136,9 @@
       return;
     }
     
-    const newPass = prompt('Enter a new password (8+ characters):');
+    const newPass = prompt('Enter a new password:');
     if (newPass == null) return;
-    if (newPass.length < 8) { alert('Password must be at least 8 characters.'); return; }
+    if (newPass.length < 8) { alert('Password must be at least 4 characters.'); return; }
     
     const confirm = prompt('Confirm new password:');
     if (confirm !== newPass) { alert('Passwords do not match.'); return; }
