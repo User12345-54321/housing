@@ -10,6 +10,20 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<script>
+  // Google Maps JS API loader (used only for DirectionsService, not for tiles)
+  (function() {
+    var s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDEUD8xlCKX-T4PCGVlIAzi5qJkXCuKbVw&libraries=routes&loading=async&callback=__gmapsReady';
+    s.async = true;
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+  window.__gmapsReady = function() {
+    window.__GMAPS_LOADED = true;
+    if (window.__onGmapsReady) window.__onGmapsReady();
+  };
+</script>
 <style>
   :root {
     --bg: #FFFFFF;
@@ -4306,34 +4320,45 @@
   let mapInstance = null;
   let mapPropertyLayers = {};  // { propName: { marker, lines: [] } }
   const routeCache = {};  // { 'lat1,lng1->lat2,lng2': [[lat,lng], ...] }
+  let directionsService = null;
   
-  // Fetch real driving route from OSRM public server. Falls back to straight line on failure.
+  function getDirectionsService() {
+    if (directionsService) return directionsService;
+    if (!window.__GMAPS_LOADED || !window.google || !window.google.maps) return null;
+    directionsService = new google.maps.DirectionsService();
+    return directionsService;
+  }
+  
+  // Fetch real driving route from Google Directions. Falls back to straight line on failure.
   async function fetchRoute(fromLat, fromLng, toLat, toLng) {
     const cacheKey = `${fromLat},${fromLng}->${toLat},${toLng}`;
     if (routeCache[cacheKey]) return routeCache[cacheKey];
     
     const straightLine = [[fromLat, fromLng], [toLat, toLng]];
-    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
-    
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-      const resp = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      if (!resp.ok) throw new Error('Route fetch failed');
-      const data = await resp.json();
-      if (!data.routes || data.routes.length === 0) throw new Error('No route');
-      
-      // Convert GeoJSON [lng, lat] to Leaflet [lat, lng]
-      const coords = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-      routeCache[cacheKey] = coords;
-      return coords;
-    } catch (err) {
-      // Fall back to straight line; cache it so we don't keep retrying
-      routeCache[cacheKey] = straightLine;
+    const ds = getDirectionsService();
+    if (!ds) {
+      // Google API not yet loaded; return straight line but DON'T cache so we can retry
       return straightLine;
     }
+    
+    return new Promise((resolve) => {
+      ds.route({
+        origin: { lat: fromLat, lng: fromLng },
+        destination: { lat: toLat, lng: toLng },
+        travelMode: google.maps.TravelMode.DRIVING,
+      }, (result, status) => {
+        if (status === 'OK' && result.routes && result.routes[0]) {
+          // overview_path is an array of LatLng objects
+          const path = result.routes[0].overview_path.map(latlng => [latlng.lat(), latlng.lng()]);
+          routeCache[cacheKey] = path;
+          resolve(path);
+        } else {
+          // Cache straight line so we don't keep retrying failed routes
+          routeCache[cacheKey] = straightLine;
+          resolve(straightLine);
+        }
+      });
+    });
   }
   
   function initMapIfNeeded() {
