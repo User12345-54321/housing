@@ -1879,7 +1879,7 @@
         <span class="legend-item"><span class="dot unc"></span> UNC Chapel Hill</span>
         <span class="legend-item"><span class="dot duke"></span> Duke Chapel</span>
       </div>
-      <div class="map-hint">Hover over a property to see its routes. Click to open details.</div>
+      <div class="map-hint">Hover a property to see its driving routes. Click to open details.</div>
     </div>
     <div id="leaflet-map"></div>
   </section>
@@ -4305,6 +4305,36 @@
   // === MAP VIEW ===
   let mapInstance = null;
   let mapPropertyLayers = {};  // { propName: { marker, lines: [] } }
+  const routeCache = {};  // { 'lat1,lng1->lat2,lng2': [[lat,lng], ...] }
+  
+  // Fetch real driving route from OSRM public server. Falls back to straight line on failure.
+  async function fetchRoute(fromLat, fromLng, toLat, toLng) {
+    const cacheKey = `${fromLat},${fromLng}->${toLat},${toLng}`;
+    if (routeCache[cacheKey]) return routeCache[cacheKey];
+    
+    const straightLine = [[fromLat, fromLng], [toLat, toLng]];
+    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!resp.ok) throw new Error('Route fetch failed');
+      const data = await resp.json();
+      if (!data.routes || data.routes.length === 0) throw new Error('No route');
+      
+      // Convert GeoJSON [lng, lat] to Leaflet [lat, lng]
+      const coords = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+      routeCache[cacheKey] = coords;
+      return coords;
+    } catch (err) {
+      // Fall back to straight line; cache it so we don't keep retrying
+      routeCache[cacheKey] = straightLine;
+      return straightLine;
+    }
+  }
   
   function initMapIfNeeded() {
     if (mapInstance) {
@@ -4330,8 +4360,9 @@
       zoomControl: true,
     }).setView([35.85, -78.65], 10);
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors, © CARTO',
+      subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(mapInstance);
     
@@ -4358,20 +4389,22 @@
       });
       const marker = L.marker([p.latitude, p.longitude], { icon: propIcon }).addTo(mapInstance);
       
-      // Build route lines (hidden by default, shown on hover)
-      const lines = [];
+      // Each property gets up to 3 route polylines (lazy-loaded on first hover)
+      const routes = [];
       Object.entries(REFERENCE_POINTS).forEach(([key, ref]) => {
         const mins = key === 'mojo' ? p.mins_mojo : (key === 'unc' ? p.mins_unc : p.mins_duke);
         if (mins == null || mins === '') return;
         const color = key === 'mojo' ? '#C44569' : (key === 'unc' ? '#2F6F4E' : '#6B5BA8');
-        const line = L.polyline([[p.latitude, p.longitude], [ref.lat, ref.lng]], {
+        // Create polyline with empty initial points; we'll populate on first hover
+        const line = L.polyline([], {
           color,
-          weight: 3,
+          weight: 4,
           opacity: 0,
-          dashArray: '6, 6',
+          lineCap: 'round',
+          lineJoin: 'round',
           interactive: false,
         }).addTo(mapInstance);
-        lines.push({ line, color });
+        routes.push({ line, color, ref, loaded: false });
       });
       
       const priceText = p.price_min_june ? '$' + p.price_min_june.toLocaleString() + (p.price_max_june && p.price_max_june !== p.price_min_june ? ' - $' + p.price_max_june.toLocaleString() : '') + ' /mo' : 'No June pricing';
@@ -4390,15 +4423,30 @@
       `;
       marker.bindPopup(popupHtml);
       
-      // Show route lines on hover
-      marker.on('mouseover', () => {
-        lines.forEach(({ line }) => line.setStyle({ opacity: 0.7 }));
+      // Lazy-load real routes on first hover
+      let loadingPromise = null;
+      function ensureRoutesLoaded() {
+        if (loadingPromise) return loadingPromise;
+        loadingPromise = Promise.all(routes.map(async (r) => {
+          if (r.loaded) return;
+          const coords = await fetchRoute(p.latitude, p.longitude, r.ref.lat, r.ref.lng);
+          r.line.setLatLngs(coords);
+          r.loaded = true;
+        }));
+        return loadingPromise;
+      }
+      
+      marker.on('mouseover', async () => {
+        // Show routes immediately at lower opacity even if not loaded yet
+        // (will populate as they arrive)
+        await ensureRoutesLoaded();
+        routes.forEach(r => r.line.setStyle({ opacity: 0.75 }));
       });
       marker.on('mouseout', () => {
-        lines.forEach(({ line }) => line.setStyle({ opacity: 0 }));
+        routes.forEach(r => r.line.setStyle({ opacity: 0 }));
       });
       
-      mapPropertyLayers[p.name] = { marker, lines };
+      mapPropertyLayers[p.name] = { marker, routes };
     });
     
     // Wire up popup link clicks (delegated)
@@ -4413,11 +4461,11 @@
       }
     });
     
-    // Fit bounds to show all markers
+    // Fit bounds to show all markers, then ease in slightly
     const allPoints = props.map(p => [p.latitude, p.longitude]);
     Object.values(REFERENCE_POINTS).forEach(r => allPoints.push([r.lat, r.lng]));
     const bounds = L.latLngBounds(allPoints);
-    mapInstance.fitBounds(bounds, { padding: [40, 40] });
+    mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
   }
   
   function refreshMapMarkers() {
