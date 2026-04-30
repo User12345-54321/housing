@@ -522,6 +522,24 @@
   .badge.area { background: rgba(26, 31, 46, 0.06); color: var(--ink); font-weight: 600; }
   .badge.dist { background: var(--rule-soft); }
   .badge.dist strong { color: var(--ink); margin-right: 2px; }
+  a.badge.dist.link {
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  a.badge.dist.link:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-deep);
+  }
+  a.badge.dist.link:hover strong { color: #fff; }
+  a.badge.dist.link::after {
+    content: ' ↗';
+    font-size: 9px;
+    opacity: 0.55;
+    margin-left: 2px;
+  }
   .badge.june { background: var(--good-bg); color: var(--good); font-weight: 600; }
   .badge.no-june { background: var(--bad-bg); color: var(--bad); font-weight: 500; }
   .badge.new { background: rgba(30, 58, 110, 0.1); color: var(--accent-deep); font-weight: 600; }
@@ -1537,10 +1555,9 @@
       <div>
         <div class="eyebrow">Triangle · NC · June 2026</div>
         <h1>Apartment <em>Explorer</em></h1>
-        <p class="subhead">Browse, compare, edit, and score every property in your shortlist. All edits are saved locally and reflected everywhere.</p>
+        <p class="subhead">Browse, compare, and score every property in your shortlist.</p>
       </div>
       <div class="header-actions">
-        <button class="btn ghost small" id="btn-add-property">+ Add property</button>
         <button class="btn ghost small" id="btn-print-all">PDF: all properties</button>
         <button class="btn ghost small" id="btn-print-favs">PDF: favorites</button>
         <button class="btn ghost small" id="btn-change-password">Change password</button>
@@ -2358,8 +2375,6 @@
     let cls = 'card area-' + slugifyArea(p.area);
     if (isFav) cls += ' fav';
     if (p.excluded) cls += ' excluded';
-    if (p._isAdded) cls += ' added';
-    else if (p._isEdited) cls += ' edited';
     card.className = cls;
     card.innerHTML = `
       <button class="fav-icon ${isFav ? 'on' : ''}" data-fav="${escapeHtml(p.name)}" title="Add to shortlist">${isFav ? '★' : '☆'}</button>
@@ -2368,9 +2383,9 @@
         <div class="card-name">${escapeHtml(p.name)}</div>
         <div class="card-row">
           <span class="badge area">${escapeHtml(p.area || 'Unknown')}</span>
-          ${p.mins_mojo != null && p.mins_mojo !== '' ? `<span class="badge dist"><strong>${p.mins_mojo}m</strong> MoJo</span>` : ''}
-          ${p.mins_unc != null && p.mins_unc !== '' ? `<span class="badge dist"><strong>${p.mins_unc}m</strong> UNC</span>` : ''}
-          ${p.mins_duke != null && p.mins_duke !== '' ? `<span class="badge dist"><strong>${p.mins_duke}m</strong> Duke</span>` : ''}
+          ${p.mins_mojo != null && p.mins_mojo !== '' ? (p.directions_links?.mojo ? `<a class="badge dist link" href="${p.directions_links.mojo}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open driving directions from MoJo"><strong>${p.mins_mojo}m</strong> MoJo</a>` : `<span class="badge dist"><strong>${p.mins_mojo}m</strong> MoJo</span>`) : ''}
+          ${p.mins_unc != null && p.mins_unc !== '' ? (p.directions_links?.unc ? `<a class="badge dist link" href="${p.directions_links.unc}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open driving directions from UNC"><strong>${p.mins_unc}m</strong> UNC</a>` : `<span class="badge dist"><strong>${p.mins_unc}m</strong> UNC</span>`) : ''}
+          ${p.mins_duke != null && p.mins_duke !== '' ? (p.directions_links?.duke ? `<a class="badge dist link" href="${p.directions_links.duke}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open driving directions from Duke"><strong>${p.mins_duke}m</strong> Duke</a>` : `<span class="badge dist"><strong>${p.mins_duke}m</strong> Duke</span>`) : ''}
           ${isNewConstruction(p) ? `<span class="badge new">NEW</span>` : ''}
         </div>
         <div class="card-row">
@@ -2389,7 +2404,7 @@
       </div>
     `;
     card.addEventListener('click', e => {
-      if (e.target.closest('.fav-icon') || e.target.closest('a')) return;
+      if (e.target.closest('.fav-icon') || e.target.closest('a') || e.target.closest('button[data-detail]')) return;
       openDetail(p.name);
     });
     return card;
@@ -2482,12 +2497,8 @@
       </div>
     `;
     $('#modal-actions').innerHTML = `
-      <button class="btn edit small" id="btn-enter-edit">Edit</button>
-      ${p._isAdded ? `<button class="btn ghost small" id="btn-delete-property">Delete</button>` : ''}
       <button class="modal-close" id="modal-close">×</button>
     `;
-    $('#btn-enter-edit').addEventListener('click', () => enterEditMode(p.name));
-    if (p._isAdded) $('#btn-delete-property').addEventListener('click', () => confirmDeleteProperty(p.name));
     $('#modal-close').addEventListener('click', closeModal);
 
     // Build directions links
@@ -2498,8 +2509,6 @@
     else if (p.mins_unc != null && p.mins_unc !== '') dirLinks.push(`From UNC: ${escapeHtml(String(p.mins_unc))} min`);
     if (p.directions_links?.duke) dirLinks.push(`<a href="${p.directions_links.duke}" target="_blank" rel="noopener">From Duke · ${p.mins_duke != null && p.mins_duke !== '' ? p.mins_duke + ' min' : escapeHtml(p.directions?.duke || '')} ↗</a>`);
     else if (p.mins_duke != null && p.mins_duke !== '') dirLinks.push(`From Duke: ${escapeHtml(String(p.mins_duke))} min`);
-
-    const note = state.notes[p.name] || '';
 
     let bodyHtml = `
       <div class="info-grid">
@@ -2553,31 +2562,10 @@
       });
       bodyHtml += `</div>`;
     } else {
-      bodyHtml += `<div class="empty-state">No floorplans yet. Click <strong>Edit</strong> to add some.</div>`;
+      bodyHtml += `<div class="empty-state">No floorplans listed yet.</div>`;
     }
 
-    bodyHtml += `
-      <div class="notes-area">
-        <div style="font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px;">Your notes <span class="saved-tag" id="saved-tag">Saved ✓</span></div>
-        <textarea id="modal-notes" placeholder="What did you think? Any questions for leasing? Pros/cons?">${escapeHtml(note)}</textarea>
-      </div>
-    `;
-
     $('#modal-body').innerHTML = bodyHtml;
-
-    // Notes auto-save
-    const ta = $('#modal-notes');
-    let saveTimer;
-    ta.addEventListener('input', () => {
-      state.notes[p.name] = ta.value;
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        save();
-        const tag = $('#saved-tag');
-        tag.classList.add('show');
-        setTimeout(() => tag.classList.remove('show'), 1200);
-      }, 400);
-    });
 
     // Floorplan card clicks → open sub-modal
     $$('#modal-body .fp-card[data-fp-idx]').forEach(card => {
@@ -3169,8 +3157,6 @@
   });
   $('#dialog-overlay').addEventListener('click', e => { if (e.target.id === 'dialog-overlay') closeDialog(); });
 
-  // === ADD PROPERTY ===
-  $('#btn-add-property').addEventListener('click', enterAddMode);
   $('#btn-lock').addEventListener('click', lockApp);
   $('#btn-change-password').addEventListener('click', changePasswordFlow);
 
@@ -3674,8 +3660,6 @@
     }
     
     const propertyHtml = properties.map(p => {
-      const noteText = state.notes[p.name] ? `<div class="note-block"><div class="note-label">Notes</div><div class="note-content">${escapeP(state.notes[p.name])}</div></div>` : '';
-      
       const fpRows = (p.floorplans || []).map(fp => {
         const status = fp.is_unavailable_june ? 'Not in June' : (fp.is_june_capable ? 'June ✓' : 'Other timing');
         const price = fp.price_min ? fmtPrice(fp.price_min, fp.price_max) : '—';
@@ -3711,8 +3695,6 @@
               <tbody>${fpRows}</tbody>
             </table>
           ` : '<div class="no-fp">No floorplans listed.</div>'}
-          
-          ${noteText}
         </div>
       `;
     }).join('');
