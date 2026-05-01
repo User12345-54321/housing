@@ -2656,6 +2656,53 @@
     display: inline-block;
   }
 
+
+  /* === LOW-CLUTTER FEATURE ADDITIONS === */
+  :focus-visible { outline: 3px solid rgba(30,58,110,.38); outline-offset: 3px; }
+  .card:focus-visible, .fp-browse-card:focus-visible, .score-row:focus-visible {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30,58,110,.12), var(--shadow-md);
+  }
+  .results-toolbar {
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 14px;
+    padding: 12px 14px; margin: 0 0 16px; display: flex; flex-wrap: wrap;
+    gap: 10px 12px; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);
+  }
+  .toolbar-summary { color: var(--ink-soft); font-size: 13px; min-width: 190px; }
+  .toolbar-summary strong { color: var(--ink); font-weight: 600; }
+  .toolbar-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; flex: 1; }
+  .toolbar-field { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .toolbar-field input, .toolbar-field select { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; min-height: 34px; font-family: inherit; font-size: 13px; color: var(--ink); text-transform: none; letter-spacing: normal; font-weight: 500; }
+  .toolbar-field input { min-width: min(280px, 72vw); }
+  .toolbar-field select { min-width: 170px; }
+  .segmented-control { display: inline-flex; border: 1px solid var(--rule); background: var(--bg); border-radius: 999px; overflow: hidden; min-height: 34px; }
+  .segmented-control button { border: none; background: transparent; color: var(--ink-soft); font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 12px; cursor: pointer; }
+  .segmented-control button:hover { background: var(--rule-soft); color: var(--ink); }
+  .segmented-control button.active { background: var(--ink); color: var(--paper); }
+  .share-status { min-width: 70px; font-size: 12px; color: var(--good); opacity: 0; transition: opacity .18s ease; }
+  .share-status.show { opacity: 1; }
+  .grid.compact-card-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .grid.compact-card-grid .card-body, .grid.compact-card-grid .fp-browse-body { padding: 14px 15px; gap: 8px; }
+  .grid.compact-card-grid .card-name, .grid.compact-card-grid .fp-browse-title { font-size: 17px; }
+  .grid.compact-card-grid .fp-browse-card { display: block; }
+  .grid.compact-card-grid .fp-browse-media, .grid.compact-card-grid .card-deal, .grid.compact-card-grid .card-action-hint, .grid.compact-card-grid .review-meta .review-due { display: none !important; }
+  .grid.compact-card-grid .price-range, .grid.compact-card-grid .fp-browse-price .price-range { font-size: 18px; }
+  .compare-prop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .compare-pin-btn { border: 1px solid var(--rule); background: var(--paper); color: var(--ink-soft); border-radius: 999px; padding: 3px 8px; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .compare-pin-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .compare-pin-btn.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .compare-pin-note { font-size: 12px; color: var(--ink-faint); margin-top: 8px; }
+  .score-results-head.clean-toolbar { margin-bottom: 12px; }
+  .score-results-count { font-size: 13px; color: var(--ink-soft); }
+  @media (max-width: 760px) {
+    .results-toolbar { align-items: stretch; }
+    .toolbar-summary, .toolbar-controls { width: 100%; justify-content: flex-start; }
+    .toolbar-field { width: 100%; flex-direction: column; align-items: stretch; }
+    .toolbar-field input, .toolbar-field select { width: 100%; min-width: 0; }
+    .segmented-control { width: 100%; }
+    .segmented-control button { flex: 1; }
+    .share-status { width: 100%; }
+  }
+
 </style>
 </head>
 <body>
@@ -2678,32 +2725,23 @@
       <div class="header-actions">
         <button class="btn ghost small" id="btn-print-all">PDF: all properties</button>
         <button class="btn ghost small" id="btn-print-favs">PDF: favorites</button>
+        <button class="btn ghost small" id="btn-copy-view">Copy current view</button>
         <button class="btn ghost small" id="btn-change-password">Change password</button>
         <button class="btn ghost small" id="btn-lock">Lock</button>
       </div>
     </div>
   </header>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="browse">Browse <span class="count" id="count-browse">0</span></button>
-    <button class="tab" data-tab="map">Map</button>
-    <button class="tab" data-tab="favorites">Favorites <span class="count" id="count-fav">0</span></button>
-    <button class="tab" data-tab="compare">Compare</button>
-    <button class="tab" data-tab="score">Score & Rank</button>
+  <nav class="tabs" role="tablist" aria-label="Apartment explorer sections">
+    <button class="tab active" data-tab="browse" role="tab" aria-selected="true">Browse <span class="count" id="count-browse">0</span></button>
+    <button class="tab" data-tab="map" role="tab" aria-selected="false">Map</button>
+    <button class="tab" data-tab="favorites" role="tab" aria-selected="false">Favorites <span class="count" id="count-fav">0</span></button>
+    <button class="tab" data-tab="compare" role="tab" aria-selected="false">Compare</button>
+    <button class="tab" data-tab="score" role="tab" aria-selected="false">Score & Rank</button>
   </nav>
 
   <!-- BROWSE VIEW -->
   <section id="view-browse" class="view active">
-    <div class="browse-mode-bar">
-      <div>
-        <strong>Browse mode</strong>
-        <p>Start with individual floorplans, then switch back to property cards when you want the wider picture.</p>
-      </div>
-      <div class="view-toggle" id="browse-mode-toggle" aria-label="Browse display mode">
-        <button type="button" data-browse-mode="floorplan" class="active">Floorplans</button>
-        <button type="button" data-browse-mode="property">Properties</button>
-      </div>
-    </div>
     <div class="filter-bar">
       <div class="filter-group">
         <label>Bedrooms</label>
@@ -2728,20 +2766,6 @@
         <span class="price-display" id="mojo-display">≤ 60 min</span>
       </div>
       <div class="filter-group">
-        <label>Sort by</label>
-        <select id="sort-select">
-          <option value="score" selected>Weighted fit</option>
-          <option value="mojo">Distance from MoJo</option>
-          <option value="price-low">Lowest June price</option>
-          <option value="price-high">Highest June price</option>
-          <option value="june">Most June availability</option>
-          <option value="unc">Distance from UNC</option>
-          <option value="duke">Distance from Duke</option>
-          <option value="review-oldest">Oldest review first</option>
-          <option value="name">Alphabetical</option>
-        </select>
-      </div>
-      <div class="filter-group">
         <label>Filters</label>
         <div class="toggle-row">
           <input type="checkbox" id="filter-june" checked />
@@ -2754,9 +2778,35 @@
         <button class="clear-btn" id="clear-filters">Clear all filters</button>
       </div>
     </div>
-    <div class="result-meta">
-      <div>Showing <strong id="result-count">0</strong> of <strong id="result-total">0</strong> options</div>
-      <div id="result-extra"></div>
+    <div class="results-toolbar" id="browse-results-toolbar">
+      <div class="toolbar-summary">Showing <strong id="result-count">0</strong> of <strong id="result-total">0</strong> <span id="result-kind">options</span></div>
+      <div class="toolbar-controls">
+        <label class="toolbar-field" for="browse-search">Search
+          <input type="search" id="browse-search" placeholder="Property, area, floorplan, deal, address" autocomplete="off" />
+        </label>
+        <label class="toolbar-field" for="sort-select">Sort
+          <select id="sort-select">
+            <option value="score" selected>Weighted fit</option>
+            <option value="mojo">Distance from MoJo</option>
+            <option value="price-low">Lowest June price</option>
+            <option value="price-high">Highest June price</option>
+            <option value="june">Most June availability</option>
+            <option value="unc">Distance from UNC</option>
+            <option value="duke">Distance from Duke</option>
+            <option value="review-oldest">Oldest review first</option>
+            <option value="name">Alphabetical</option>
+          </select>
+        </label>
+        <div class="segmented-control" id="browse-mode-toggle" aria-label="Browse display mode">
+          <button type="button" data-browse-mode="floorplan" class="active">Floorplans</button>
+          <button type="button" data-browse-mode="property">Properties</button>
+        </div>
+        <div class="segmented-control" id="card-density-toggle" aria-label="Card density">
+          <button type="button" data-density="comfortable" class="active">Comfortable</button>
+          <button type="button" data-density="compact">Compact</button>
+        </div>
+        <span class="share-status" id="share-status" aria-live="polite">Copied</span>
+      </div>
     </div>
     <div class="grid" id="property-grid"></div>
   </section>
@@ -2796,6 +2846,7 @@
         <strong style="font-family: 'DM Sans', sans-serif;font-size:18px;font-weight:500;">Side-by-side comparison</strong>
         <span style="font-size:12px;color:var(--ink-faint);">Pick up to 4</span>
       </div>
+      <div class="compare-pin-note" id="compare-pin-note">Pin one selected property to keep it first while swapping the others.</div>
       <div class="picker-row" id="compare-picker-row"></div>
     </div>
     <div id="compare-table"></div>
@@ -2855,10 +2906,11 @@
         </div>
       </div>
       <div class="score-results-panel">
-        <div class="score-results-head">
+        <div class="score-results-head clean-toolbar">
           <div>
             <div class="score-results-title">Ranked results</div>
             <div class="score-results-note">Use the sort control to check price, commute, availability, or weighted fit.</div>
+            <div class="score-results-count" id="score-results-count">0 options</div>
           </div>
           <div class="score-sort-card">
             <label for="score-sort-select">Sort by</label>
@@ -2881,13 +2933,13 @@
   </section>
 
   <div class="data-footer">
-    Data refreshed May 1, 2026 · last-reviewed dates shown per property · 13 properties tracked
+    Data refreshed May 1, 2026 · 13 properties tracked
   </div>
 </div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay">
-  <div class="modal" id="modal">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
     <div class="modal-head">
       <div class="modal-title" id="modal-title"></div>
       <div class="modal-actions" id="modal-actions"></div>
@@ -2898,7 +2950,7 @@
 
 <!-- FLOORPLAN SUB-MODAL -->
 <div class="fp-modal-overlay" id="fp-modal-overlay">
-  <div class="fp-modal" id="fp-modal">
+  <div class="fp-modal" id="fp-modal" role="dialog" aria-modal="true">
     <div class="fp-modal-head">
       <div id="fp-modal-title"></div>
       <button class="modal-close" id="fp-modal-close">×</button>
@@ -2909,7 +2961,7 @@
 
 <!-- CONFIRM DIALOG -->
 <div class="dialog-overlay" id="dialog-overlay">
-  <div class="dialog">
+  <div class="dialog" role="alertdialog" aria-modal="true">
     <h3 id="dialog-title">Are you sure?</h3>
     <p id="dialog-message"></p>
     <div class="actions">
@@ -2938,6 +2990,7 @@
     notes: {},
     weights: { price: 8, dist_mojo: 9, dist_unc: 3, dist_duke: 3, june: 5, new: 4 },
     compare: [],
+    comparePinned: null,
     edits: {},
     addedProperties: [],
   };
@@ -3032,6 +3085,8 @@
     s.favorites = s.favorites || {};
     s.notes = {};
     s.compare = s.compare || [];
+    s.comparePinned = s.comparePinned || null;
+    if (s.comparePinned && !s.compare.includes(s.comparePinned)) s.comparePinned = null;
     s.edits = s.edits || {};
     s.addedProperties = s.addedProperties || [];
     
@@ -3043,6 +3098,7 @@
       s.favorites = Object.assign({}, m3.favorites || {}, m1.favorites || {});
       s.weights = Object.assign({}, DEFAULT_STATE.weights, m1.weights || {});
       s.compare = m1.compare || [];
+      s.comparePinned = null;
       // Personal notes are not retained in this version.
       s.notes = {};
       delete s.users;
@@ -3251,18 +3307,13 @@
   function revealApp() {
     document.getElementById('lock-screen').style.display = 'none';
     document.getElementById('app-content').style.display = '';
-    
-    // Re-sync UI to loaded state
-    document.querySelectorAll('.weight-row').forEach(row => {
-      const k = row.dataset.key;
-      const slider = row.querySelector('input[type="range"]');
-      const valEl = row.querySelector('.val');
-      if (slider) slider.value = state.weights[k];
-      if (valEl) valEl.textContent = state.weights[k];
-    });
-    
+    applyViewFromUrl();
+    syncWeightControls();
+    syncBrowseControls();
     renderChangelogBanner();
     render();
+    const tab = getUrlParams().get('tab');
+    if (tab && document.getElementById('view-' + tab)) setActiveTab(tab, { skipRender: true });
   }
   
   // Lock action: clear cryptoKey, hide app, show enter-password screen
@@ -3800,9 +3851,155 @@
     maxMojo: 60,
     juneOnly: true,
     newOnly: false,
+    search: '',
   };
   let sortBy = 'score';
   let browseMode = 'floorplan';
+  let cardDensity = 'comfortable';
+  let urlViewApplied = false;
+
+  function getUrlParams() {
+    try { return new URLSearchParams(window.location.search || ''); }
+    catch (e) { return new URLSearchParams(); }
+  }
+
+  function activeTabName() {
+    const active = document.querySelector('.tab.active');
+    return active?.dataset?.tab || 'browse';
+  }
+
+  function syncFilterControls() {
+    $$('#chips-beds .chip').forEach(c => c.classList.toggle('on', filters.beds.has(parseInt(c.dataset.beds))));
+    $$('#chips-area .chip').forEach(c => c.classList.toggle('on', filters.areas.has(c.dataset.area)));
+    const price = $('#filter-price'); if (price) price.value = filters.maxPrice;
+    const priceDisplay = $('#price-display'); if (priceDisplay) priceDisplay.textContent = filters.maxPrice >= 3500 ? 'No cap' : '≤ ' + fmt$(filters.maxPrice);
+    const mojo = $('#filter-mojo'); if (mojo) mojo.value = filters.maxMojo;
+    const mojoDisplay = $('#mojo-display'); if (mojoDisplay) mojoDisplay.textContent = '≤ ' + filters.maxMojo + ' min';
+    const june = $('#filter-june'); if (june) june.checked = filters.juneOnly;
+    const newer = $('#filter-new'); if (newer) newer.checked = filters.newOnly;
+  }
+
+  function syncBrowseControls() {
+    const search = $('#browse-search');
+    if (search && search.value !== (filters.search || '')) search.value = filters.search || '';
+    const sort = $('#sort-select');
+    if (sort && sort.value !== sortBy) sort.value = sortBy;
+    $$('#browse-mode-toggle button').forEach(btn => btn.classList.toggle('active', (btn.dataset.browseMode || 'floorplan') === browseMode));
+    $$('#card-density-toggle button').forEach(btn => btn.classList.toggle('active', (btn.dataset.density || 'comfortable') === cardDensity));
+  }
+
+  function setActiveTab(tab, opts = {}) {
+    if (!document.getElementById('view-' + tab)) return;
+    $$('.tab').forEach(x => {
+      const on = x.dataset.tab === tab;
+      x.classList.toggle('active', on);
+      x.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + tab));
+    if (tab === 'compare') renderComparePicker();
+    if (tab === 'score') renderScore();
+    if (tab === 'map') initMapIfNeeded();
+    if (!opts.skipRender && tab === 'browse') render();
+  }
+
+  function searchHaystackForProperty(p) {
+    return [p.name, p.title, p.area, p.address, p.phone, p.deals, p.qualification, p.first_occupancy, p.best_units, p.availability_summary, p.tour,
+      ...(p.floorplans || []).flatMap(fp => [fp.unit, fp.beds, fp.price, fp.timing, fp.notes, fp.availability_text])
+    ].filter(Boolean).join(' ').toLowerCase();
+  }
+
+  function searchHaystackForFloorplan(item) {
+    const p = item.p;
+    const fp = item.fp || {};
+    return [p.name, p.title, p.area, p.address, p.deals, p.best_units, p.availability_summary, fp.unit, fp.beds, fp.price, fp.timing, fp.notes, fp.availability_text, fp.sqft]
+      .filter(Boolean).join(' ').toLowerCase();
+  }
+
+  function matchesSearchText(text) {
+    const q = (filters.search || '').trim().toLowerCase();
+    if (!q) return true;
+    return q.split(/\s+/).filter(Boolean).every(part => text.includes(part));
+  }
+
+  function currentViewParams() {
+    const params = new URLSearchParams();
+    params.set('tab', activeTabName());
+    params.set('browse', browseMode);
+    params.set('density', cardDensity);
+    params.set('sort', sortBy);
+    if (filters.search) params.set('search', filters.search);
+    if (filters.beds.size) params.set('beds', Array.from(filters.beds).sort((a,b)=>a-b).join(','));
+    if (filters.areas.size) params.set('areas', Array.from(filters.areas).sort().join('|'));
+    if (filters.maxPrice !== 3500) params.set('maxPrice', String(filters.maxPrice));
+    if (filters.maxMojo !== 60) params.set('maxMojo', String(filters.maxMojo));
+    if (!filters.juneOnly) params.set('june', '0');
+    if (filters.newOnly) params.set('new', '1');
+    if (state.compare?.length) params.set('compare', state.compare.join('|'));
+    if (state.comparePinned) params.set('pin', state.comparePinned);
+    params.set('scoreMode', scoreMode);
+    params.set('scoreSort', scoreSortBy);
+    if (scoreBedFilter !== 'all') params.set('scoreBeds', scoreBedFilter);
+    if (!$('#score-only-june')?.checked) params.set('scoreJune', '0');
+    params.set('weights', weightKeys().map(k => `${k}:${state.weights[k] ?? DEFAULT_STATE.weights[k] ?? 0}`).join(','));
+    return params;
+  }
+
+  async function copyCurrentViewLink() {
+    const url = new URL(window.location.href);
+    url.search = currentViewParams().toString();
+    const text = url.toString();
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      }
+      showShareStatus('Copied');
+    } catch (e) {
+      window.prompt('Copy this view link:', text);
+      showShareStatus('Ready');
+    }
+  }
+
+  function showShareStatus(message) {
+    const el = $('#share-status');
+    if (!el) return;
+    el.textContent = message || 'Copied';
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1800);
+  }
+
+  function applyViewFromUrl() {
+    if (urlViewApplied) return;
+    urlViewApplied = true;
+    const params = getUrlParams();
+    if (!params.toString()) return;
+    const asNum = (v, fallback) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
+    if (params.has('browse')) browseMode = params.get('browse') === 'property' ? 'property' : 'floorplan';
+    if (params.has('density')) cardDensity = params.get('density') === 'compact' ? 'compact' : 'comfortable';
+    if (params.has('sort')) sortBy = params.get('sort') || sortBy;
+    filters.search = params.get('search') || '';
+    filters.beds = new Set((params.get('beds') || '').split(',').map(v => Number(v)).filter(v => Number.isFinite(v) && v > 0));
+    filters.areas = new Set((params.get('areas') || '').split('|').filter(Boolean));
+    filters.maxPrice = asNum(params.get('maxPrice'), filters.maxPrice);
+    filters.maxMojo = asNum(params.get('maxMojo'), filters.maxMojo);
+    filters.juneOnly = params.get('june') === '0' ? false : filters.juneOnly;
+    filters.newOnly = params.get('new') === '1' ? true : filters.newOnly;
+    if (params.has('compare')) state.compare = params.get('compare').split('|').filter(Boolean).slice(0, 4);
+    if (params.has('pin')) state.comparePinned = params.get('pin');
+    if (state.comparePinned && !state.compare.includes(state.comparePinned)) state.comparePinned = null;
+    if (params.has('scoreMode')) scoreMode = params.get('scoreMode') === 'property' ? 'property' : 'floorplan';
+    if (params.has('scoreSort')) scoreSortBy = params.get('scoreSort') || scoreSortBy;
+    if (params.has('scoreBeds')) scoreBedFilter = params.get('scoreBeds') || 'all';
+    const scoreJune = $('#score-only-june'); if (scoreJune && params.get('scoreJune') === '0') scoreJune.checked = false;
+    if (params.has('weights')) params.get('weights').split(',').forEach(pair => {
+      const [k, v] = pair.split(':');
+      if (weightKeys().includes(k)) state.weights[k] = asNum(v, state.weights[k] ?? DEFAULT_STATE.weights[k] ?? 0);
+    });
+    syncFilterControls();
+    syncBrowseControls();
+  }
 
   function isNewConstruction(p) {
     const txt = ((p.first_occupancy || '') + ' ' + (p.deals || '')).toLowerCase();
@@ -3858,17 +4055,26 @@
   });
   $('#filter-june').addEventListener('change', e => { filters.juneOnly = e.target.checked; render(); });
   $('#filter-new').addEventListener('change', e => { filters.newOnly = e.target.checked; render(); });
-  $('#sort-select').addEventListener('change', e => { sortBy = e.target.value; render(); });
+  $('#sort-select')?.addEventListener('change', e => { sortBy = e.target.value; render(); });
+  $('#browse-search')?.addEventListener('input', e => { filters.search = e.target.value || ''; render(); });
+  $('#btn-copy-view')?.addEventListener('click', copyCurrentViewLink);
 
   $$('#browse-mode-toggle button').forEach(btn => {
     btn.addEventListener('click', () => {
       browseMode = btn.dataset.browseMode || 'floorplan';
-      $$('#browse-mode-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      syncBrowseControls();
+      render();
+    });
+  });
+  $$('#card-density-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cardDensity = btn.dataset.density || 'comfortable';
+      syncBrowseControls();
       render();
     });
   });
   $('#clear-filters').addEventListener('click', () => {
-    filters = { beds: new Set(), areas: new Set(), maxPrice: 3500, maxMojo: 60, juneOnly: true, newOnly: false };
+    filters = { beds: new Set(), areas: new Set(), maxPrice: 3500, maxMojo: 60, juneOnly: true, newOnly: false, search: '' };
     sortBy = 'score';
     $$('.chip').forEach(c => c.classList.remove('on'));
     $('#filter-price').value = 3500; $('#price-display').textContent = 'No cap';
@@ -3876,6 +4082,8 @@
     $('#filter-june').checked = true;
     $('#filter-new').checked = false;
     $('#sort-select').value = 'score';
+    const search = $('#browse-search'); if (search) search.value = '';
+    syncBrowseControls();
     render();
   });
 
@@ -3893,6 +4101,7 @@
     if (filters.areas.size > 0 && !filters.areas.has(p.area)) return false;
     if (p.price_min_june != null && p.price_min_june > filters.maxPrice) return false;
     if (p.mins_mojo != null && Number(p.mins_mojo) > filters.maxMojo) return false;
+    if (!matchesSearchText(searchHaystackForProperty(p))) return false;
     return true;
   }
 
@@ -3949,9 +4158,14 @@
         <div class="card-action-hint">Click card for details</div>
       </div>
     `;
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
     card.addEventListener('click', e => {
       if (e.target.closest('.fav-icon') || e.target.closest('a')) return;
       openDetail(p.name);
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(p.name); }
     });
     return card;
   }
@@ -3967,6 +4181,7 @@
     if (filters.areas.size > 0 && !filters.areas.has(p.area)) return false;
     if (item.price != null && item.price > filters.maxPrice) return false;
     if (p.mins_mojo != null && Number(p.mins_mojo) > filters.maxMojo) return false;
+    if (!matchesSearchText(searchHaystackForFloorplan(item))) return false;
     return true;
   }
 
@@ -4019,10 +4234,15 @@
         <div class="card-action-hint">Click card for floorplan details</div>
       </div>
     `;
+    card.setAttribute('role', 'button');
+    card.tabIndex = 0;
+    const openFp = () => { openDetail(p.name); setTimeout(() => openFloorplanDetail(p.name, item.fpIdx), 0); };
     card.addEventListener('click', e => {
       if (e.target.closest('.fav-icon') || e.target.closest('a')) return;
-      openDetail(p.name);
-      setTimeout(() => openFloorplanDetail(p.name, item.fpIdx), 0);
+      openFp();
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFp(); }
     });
     return card;
   }
@@ -4033,6 +4253,8 @@
     const all = getAllProperties();
     const grid = $('#property-grid');
     grid.innerHTML = '';
+    grid.classList.toggle('compact-card-grid', cardDensity === 'compact');
+    syncBrowseControls();
 
     if (browseMode === 'floorplan') {
       const base = all.filter(p => !p.excluded);
@@ -4041,7 +4263,7 @@
       $('#result-count').textContent = items.length;
       $('#result-total').textContent = floorplanItems(base, { onlyJune: false, bedFilter: 'all' }).length;
       $('#count-browse').textContent = items.length;
-      $('#result-extra').textContent = 'Floorplan-first view';
+      const kind = $('#result-kind'); if (kind) kind.textContent = 'floorplans';
       if (items.length === 0) {
         grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No floorplans match your filters. Try widening your criteria.</div>';
       }
@@ -4052,7 +4274,7 @@
       $('#result-count').textContent = sorted.length;
       $('#result-total').textContent = all.length;
       $('#count-browse').textContent = sorted.length;
-      $('#result-extra').textContent = 'Property-card view';
+      const kind = $('#result-kind'); if (kind) kind.textContent = 'properties';
       if (sorted.length === 0) {
         grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No properties match your filters. Try widening your criteria.</div>';
       }
@@ -4857,21 +5079,15 @@
 
   // === TABS ===
   $$('.tab').forEach(t => {
-    t.addEventListener('click', () => {
-      $$('.tab').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      $$('.view').forEach(v => v.classList.remove('active'));
-      $('#view-' + t.dataset.tab).classList.add('active');
-      if (t.dataset.tab === 'compare') renderComparePicker();
-      if (t.dataset.tab === 'score') renderScore();
-      if (t.dataset.tab === 'map') initMapIfNeeded();
-    });
+    t.addEventListener('click', () => setActiveTab(t.dataset.tab));
   });
 
   // === COMPARE ===
   function renderComparePicker() {
     const row = $('#compare-picker-row');
     row.innerHTML = '';
+    const note = $('#compare-pin-note');
+    if (note) note.textContent = state.comparePinned ? `Pinned: ${state.comparePinned}. Use the pin button in the table to unpin.` : 'Pin one selected property to keep it first while swapping the others.';
     const sorted = getAllProperties().filter(p => !p.excluded).sort((a,b) => a.name.localeCompare(b.name));
     sorted.forEach(p => {
       const btn = document.createElement('button');
@@ -4879,8 +5095,11 @@
       btn.textContent = p.name;
       btn.addEventListener('click', () => {
         const idx = state.compare.indexOf(p.name);
-        if (idx >= 0) state.compare.splice(idx, 1);
-        else if (state.compare.length < 4) state.compare.push(p.name);
+        if (idx >= 0) {
+          if (state.comparePinned === p.name) state.comparePinned = null;
+          state.compare.splice(idx, 1);
+        } else if (state.compare.length < 4) state.compare.push(p.name);
+        if (state.comparePinned && !state.compare.includes(state.comparePinned)) state.comparePinned = null;
         save();
         renderComparePicker();
       });
@@ -4896,7 +5115,9 @@
       return;
     }
     const all = getAllProperties();
-    const props = state.compare.map(n => all.find(p => p.name === n)).filter(Boolean);
+    let compareNames = state.compare.slice();
+    if (state.comparePinned && compareNames.includes(state.comparePinned)) compareNames = [state.comparePinned, ...compareNames.filter(n => n !== state.comparePinned)];
+    const props = compareNames.map(n => all.find(p => p.name === n)).filter(Boolean);
     const cols = props.length + 1;
     const textCell = (v, len = 280) => escapeHtml(truncate(v || '—', len));
     const linkCell = (p) => {
@@ -4915,7 +5136,7 @@
       return fps.slice(0, 5).map(fp => `${escapeHtml(fp.unit || 'Floorplan')} ${fp.price ? `<span style="color:var(--ink-soft);">${escapeHtml(fp.price)}</span>` : ''}`).join('<br>');
     };
     const rows = [
-      { label: 'Property', f: p => `<div class="compare-prop-name">${escapeHtml(p.name)}</div>` },
+      { label: 'Property', f: p => `<div class="compare-prop-head"><div class="compare-prop-name">${escapeHtml(p.name)}</div><button class="compare-pin-btn ${state.comparePinned === p.name ? 'on' : ''}" type="button" data-pin-compare="${escapeHtml(p.name)}">${state.comparePinned === p.name ? 'Pinned' : 'Pin'}</button></div>` },
       { label: 'Area', f: p => textCell(p.area) },
       { label: 'June rent', f: p => p.price_min_june != null ? fmtRange(p.price_min_june, p.price_max_june) : '—' },
       { label: 'June options', f: p => String(p.june_count || 0) },
@@ -4942,6 +5163,16 @@
         </div>
       </div>
     `;
+    $$('[data-pin-compare]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const name = btn.dataset.pinCompare;
+        state.comparePinned = state.comparePinned === name ? null : name;
+        if (state.comparePinned && !state.compare.includes(state.comparePinned)) state.compare.unshift(state.comparePinned);
+        save();
+        renderComparePicker();
+      });
+    });
   }
 
   // === SCORE ===
@@ -5149,6 +5380,14 @@
 
 
 
+  function scoreDistanceSummary(p) {
+    return [
+      p.mins_mojo != null && p.mins_mojo !== '' ? distanceInline(p, 'mojo', 'from MoJo', p.mins_mojo) : null,
+      p.mins_unc != null && p.mins_unc !== '' ? distanceInline(p, 'unc', 'from UNC', p.mins_unc) : null,
+      p.mins_duke != null && p.mins_duke !== '' ? distanceInline(p, 'duke', 'from Duke', p.mins_duke) : null,
+    ].filter(Boolean).join(' · ') || 'distance unknown';
+  }
+
   function scoreReasonSet(s) {
     const labels = componentLabels();
     const w = state.weights || {};
@@ -5218,6 +5457,7 @@
     const onlyJune = $('#score-only-june').checked;
     const sortSelect = $('#score-sort-select');
     if (sortSelect && sortSelect.value !== scoreSortBy) sortSelect.value = scoreSortBy;
+    $$('input[name="score-mode"]').forEach(r => { r.checked = r.value === scoreMode; });
     renderScoreBedPills(onlyJune);
 
     let pool = getAllProperties().filter(p => !p.excluded);
@@ -5233,6 +5473,9 @@
 
     const wrap = $('#score-results');
     wrap.innerHTML = '';
+
+    const countEl = $('#score-results-count');
+    if (countEl) countEl.textContent = `${scored.length} ${scored.length === 1 ? 'option' : 'options'}`;
 
     if (scored.length === 0) {
       wrap.innerHTML = '<div class="empty-state">No options to score with current settings.</div>';
@@ -5251,6 +5494,8 @@
         return pct > 0.5 ? `<div class="bd-seg ${k}" style="flex:${pct};" title="${escapeHtml(labels[k])}: ${pct.toFixed(0)}%"></div>` : '';
       }).join('');
 
+      el.setAttribute('role', 'button');
+      el.tabIndex = 0;
       if (s.type === 'floorplan') {
         const beds = s.fp.bed_count ? `${s.fp.bed_count} BR` : '';
         const sqft = s.fp.sqft ? `${Number(s.fp.sqft).toLocaleString()} sf` : '';
@@ -5259,7 +5504,7 @@
           <div class="rank ${i === 0 ? 'top' : ''}">${i + 1}</div>
           <div class="name">
             ${escapeHtml(s.fp.unit || 'Floorplan')}
-            <div class="sub">${escapeHtml(s.p.name)} · ${escapeHtml(s.p.area || 'Unknown')} · ${s.p.mins_mojo != null && s.p.mins_mojo !== '' ? distanceInline(s.p, 'mojo', 'from MoJo', s.p.mins_mojo) : 'distance unknown'}${meta ? ' · ' + escapeHtml(meta) : ''}</div>
+            <div class="sub">${escapeHtml(s.p.name)} · ${escapeHtml(s.p.area || 'Unknown')} · ${scoreDistanceSummary(s.p)}${meta ? ' · ' + escapeHtml(meta) : ''}</div>
           </div>
           <div class="price">${s.price != null ? fmtRange(s.price, s.priceMax) : '—'}</div>
           <div class="score-num">${s.score.toFixed(0)}</div>
@@ -5271,17 +5516,20 @@
           e.stopPropagation();
           el.classList.toggle('explaining');
         });
+        const openScoreFloorplan = () => { openDetail(s.p.name); setTimeout(() => openFloorplanDetail(s.p.name, s.fpIdx), 0); };
         el.addEventListener('click', (ev) => {
           if (ev.target.closest('a, button')) return;
-          openDetail(s.p.name);
-          setTimeout(() => openFloorplanDetail(s.p.name, s.fpIdx), 0);
+          openScoreFloorplan();
+        });
+        el.addEventListener('keydown', ev => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openScoreFloorplan(); }
         });
       } else {
         el.innerHTML = `
           <div class="rank ${i === 0 ? 'top' : ''}">${i + 1}</div>
           <div class="name">
             ${escapeHtml(s.p.name)}
-            <div class="sub">${escapeHtml(s.p.area || 'Unknown')} · ${s.p.mins_mojo != null && s.p.mins_mojo !== '' ? distanceInline(s.p, 'mojo', 'from MoJo', s.p.mins_mojo) : 'distance unknown'} · ${s.p.mins_duke != null && s.p.mins_duke !== '' ? distanceInline(s.p, 'duke', 'from Duke', s.p.mins_duke) : 'Duke unknown'}</div>
+            <div class="sub">${escapeHtml(s.p.area || 'Unknown')} · ${scoreDistanceSummary(s.p)}</div>
           </div>
           <div class="price">${s.p.price_min_june != null ? fmtRange(s.p.price_min_june, s.p.price_max_june) : '—'}</div>
           <div class="score-num">${s.score.toFixed(0)}</div>
@@ -5296,6 +5544,9 @@
         el.addEventListener('click', (ev) => {
           if (ev.target.closest('a, button')) return;
           openDetail(s.p.name);
+        });
+        el.addEventListener('keydown', ev => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openDetail(s.p.name); }
         });
       }
       wrap.appendChild(el);
@@ -5943,6 +6194,53 @@
   @media print {
     .print-instructions { display: none; }
   }
+
+  /* === LOW-CLUTTER FEATURE ADDITIONS === */
+  :focus-visible { outline: 3px solid rgba(30,58,110,.38); outline-offset: 3px; }
+  .card:focus-visible, .fp-browse-card:focus-visible, .score-row:focus-visible {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30,58,110,.12), var(--shadow-md);
+  }
+  .results-toolbar {
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 14px;
+    padding: 12px 14px; margin: 0 0 16px; display: flex; flex-wrap: wrap;
+    gap: 10px 12px; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);
+  }
+  .toolbar-summary { color: var(--ink-soft); font-size: 13px; min-width: 190px; }
+  .toolbar-summary strong { color: var(--ink); font-weight: 600; }
+  .toolbar-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; flex: 1; }
+  .toolbar-field { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .toolbar-field input, .toolbar-field select { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; min-height: 34px; font-family: inherit; font-size: 13px; color: var(--ink); text-transform: none; letter-spacing: normal; font-weight: 500; }
+  .toolbar-field input { min-width: min(280px, 72vw); }
+  .toolbar-field select { min-width: 170px; }
+  .segmented-control { display: inline-flex; border: 1px solid var(--rule); background: var(--bg); border-radius: 999px; overflow: hidden; min-height: 34px; }
+  .segmented-control button { border: none; background: transparent; color: var(--ink-soft); font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 12px; cursor: pointer; }
+  .segmented-control button:hover { background: var(--rule-soft); color: var(--ink); }
+  .segmented-control button.active { background: var(--ink); color: var(--paper); }
+  .share-status { min-width: 70px; font-size: 12px; color: var(--good); opacity: 0; transition: opacity .18s ease; }
+  .share-status.show { opacity: 1; }
+  .grid.compact-card-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .grid.compact-card-grid .card-body, .grid.compact-card-grid .fp-browse-body { padding: 14px 15px; gap: 8px; }
+  .grid.compact-card-grid .card-name, .grid.compact-card-grid .fp-browse-title { font-size: 17px; }
+  .grid.compact-card-grid .fp-browse-card { display: block; }
+  .grid.compact-card-grid .fp-browse-media, .grid.compact-card-grid .card-deal, .grid.compact-card-grid .card-action-hint, .grid.compact-card-grid .review-meta .review-due { display: none !important; }
+  .grid.compact-card-grid .price-range, .grid.compact-card-grid .fp-browse-price .price-range { font-size: 18px; }
+  .compare-prop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .compare-pin-btn { border: 1px solid var(--rule); background: var(--paper); color: var(--ink-soft); border-radius: 999px; padding: 3px 8px; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .compare-pin-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .compare-pin-btn.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .compare-pin-note { font-size: 12px; color: var(--ink-faint); margin-top: 8px; }
+  .score-results-head.clean-toolbar { margin-bottom: 12px; }
+  .score-results-count { font-size: 13px; color: var(--ink-soft); }
+  @media (max-width: 760px) {
+    .results-toolbar { align-items: stretch; }
+    .toolbar-summary, .toolbar-controls { width: 100%; justify-content: flex-start; }
+    .toolbar-field { width: 100%; flex-direction: column; align-items: stretch; }
+    .toolbar-field input, .toolbar-field select { width: 100%; min-width: 0; }
+    .segmented-control { width: 100%; }
+    .segmented-control button { flex: 1; }
+    .share-status { width: 100%; }
+  }
+
 </style>
 </head>
 <body>
